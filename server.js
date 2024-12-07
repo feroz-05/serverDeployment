@@ -2,9 +2,11 @@ const express = require('express');
 const mongoose = require('mongoose');
 const user = require('./UserSchema');
 const bodyParser = require('body-parser');
+const cors = require('cors')
 
 const app = express();
 
+app.use(cors())
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended:true}));
 const port = 3000;
@@ -13,7 +15,7 @@ mongoose.connect("mongodb+srv://ferozcollegeuse:feroz0125@ferozcluster01.h7aiv.m
     console.log("Mongodb Server Cloud is connected");
 }).catch((err)=>{
     console.log(err);
-})
+});
 
 function CreateUser(name,email,password){
     const newUser = new user({
@@ -32,33 +34,45 @@ function CreateUser(name,email,password){
 }
 
 app.get("/",(req,res)=>{
-    res.send("Hello World");
+    res.json({message:"Hello World"});
 })
 
 app.post("/register",async(req,res)=>{
     const {name, email, password} = req.body;
-    const userExist = await user.findOne({email:email});
-    if(userExist){
-        res.send("User Already Exist");
+    if(name === "" || email === "" || password === ""){
+        res.json({message:"Please fill all fields"})
     }else{
-        CreateUser(name,email,password);
-        console.log(name,email,password);
-        console.log("User Created");
-        res.send("User Created Successfully");
+        const userExist = await user.findOne({email:email});
+        if(userExist){
+            res.json({message:"User Already Exist"});
+        }else{
+            CreateUser(name,email,password);
+            console.log(name,email,password);
+            console.log("User Created");
+            res.status(200)
+            res.json({message:"User Created Successfully"});
     }
+}
 })
 
-app.post("/login",async(req,res)=>{
+app.post("/login", async(req,res)=>{
     const {email, password} = req.body;
-    const userExist = await user.findOne({email:email});
-    if (userExist){
-        if(userExist.password === password){
-            res.send("Login Success");
+    if( email === "" || password === ""){
+        res.json({message:"Please fill all fields"})
+    }else{
+        const userExist = await user.findOne({email:email});
+        if (userExist){
+            if(userExist.password === password){
+            res.status(200)
+            res.json({message:"Logged in"});
+        }else{
+            res.json({message:"user id and password does not match"});
         }
     }else{
-        res.send("user id and password does not match");
+        res.json({message:"user id and password does not match"});
     }
-
+    
+}
 })
 
 app.listen(port,()=>{
